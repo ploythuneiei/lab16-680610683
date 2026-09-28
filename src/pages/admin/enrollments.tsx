@@ -67,8 +67,11 @@ function OptionSelect({
       onValueChange={(v) => onChange(v as string)}
       disabled={disabled}
     >
-      <SelectTrigger id={id} className="w-full">
-        <SelectValue placeholder={placeholder} />
+      <SelectTrigger id={id} className="w-full min-w-0">
+        <SelectValue
+          placeholder={placeholder}
+          className="min-w-0 flex-1 truncate text-left"
+        />
       </SelectTrigger>
       <SelectContent>
         {options.map((o) => (
@@ -81,6 +84,8 @@ function OptionSelect({
   );
 }
 
+type StudentOption = Option & { name: string };
+
 // ---------- Combobox เลือกนักศึกษาหลายคน (ไม่ creatable — เลือกได้เฉพาะที่มีอยู่) ----------
 function StudentMultiField({
   items,
@@ -88,27 +93,34 @@ function StudentMultiField({
   onValueChange,
   disabled,
 }: {
-  items: Option[];
+  items: StudentOption[];
   value: string[];
   onValueChange: (next: string[]) => void;
   disabled?: boolean;
 }) {
   const anchor = useComboboxAnchor();
-  const available = items.filter((o) => !value.includes(o.value));
 
   return (
-    <Combobox items={available} multiple value={value} onValueChange={onValueChange} disabled={disabled}>
+    <Combobox
+      items={items}
+      multiple
+      value={value}
+      onValueChange={onValueChange}
+      disabled={disabled}
+    >
       <ComboboxChips ref={anchor}>
         <ComboboxValue>
           {(vals: string[]) =>
             vals.map((id) => {
-              const label = items.find((o) => o.value === id)?.label ?? id;
-              return <ComboboxChip key={id}>{label}</ComboboxChip>;
+              const name = items.find((o) => o.value === id)?.name ?? id;
+              return <ComboboxChip key={id}>{name}</ComboboxChip>;
             })
           }
         </ComboboxValue>
         <ComboboxChipsInput
-          placeholder={disabled ? "เลือกวิชาก่อน" : "เลือกนักศึกษา"}
+          placeholder={
+            value.length > 0 ? "" : disabled ? "เลือกวิชาก่อน" : "ค้นหา/เลือกนักศึกษา"
+          }
         />
       </ComboboxChips>
       <ComboboxContent anchor={anchor}>
@@ -154,7 +166,8 @@ export default function AdminEnrollmentsPage() {
       .filter((s) => !s.enrolledCourses.includes(formCourse))
       .map((s) => ({
         value: s.studentId,
-        label: `${s.studentId} — ${s.firstName} ${s.lastName}`,
+        label: `${s.studentId} — ${s.firstName} ${s.lastName}`, // แสดงในลิสต์
+        name: `${s.firstName} ${s.lastName}`,                    // แสดงใน chip
       }));
   }, [students, formCourse]);
 
@@ -207,14 +220,14 @@ export default function AdminEnrollmentsPage() {
           <PlusCircle className="h-4 w-4" />
           ลงทะเบียนให้นักศึกษา
         </DialogTrigger>
-        <DialogContent>
+        <DialogContent className="grid-cols-1">
           <DialogHeader>
             <DialogTitle>ลงทะเบียนให้นักศึกษา</DialogTitle>
-            <DialogDescription>เลือกวิชาก่อน แล้วจึงเลือกนักศึกษาได้</DialogDescription>
+            <DialogDescription>เลือกวิชาก่อน แล้วเลือกนักศึกษาที่ยังไม่ได้ลงทะเบียนวิชานั้น (เลือกได้มากกว่า 1 คน)</DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4">
-            <div className="grid gap-1.5">
+          <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 gap-1.5">
               <Label htmlFor="formCourse">วิชา</Label>
               <OptionSelect
                 id="formCourse"
@@ -225,7 +238,7 @@ export default function AdminEnrollmentsPage() {
               />
             </div>
 
-            <div className="grid gap-1.5">
+            <div className="grid grid-cols-1 gap-1.5">
               <Label>นักศึกษา</Label>
               <StudentMultiField
                 items={studentItems}
@@ -242,7 +255,7 @@ export default function AdminEnrollmentsPage() {
               onClick={handleEnroll}
             >
               <PlusCircle className="h-4 w-4" />
-              ลงทะเบียน ({formStudents.length} คน)
+              ลงทะเบียน{formStudents.length > 0 && ` (${formStudents.length} คน)`}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -293,7 +306,7 @@ export default function AdminEnrollmentsPage() {
               const enrolled = studentsOf(c.courseCode);
               return (
                 <TableRow key={c.courseCode}>
-                  <TableCell className="font-medium">{c.courseCode}</TableCell>
+                  <TableCell>{c.courseCode}</TableCell>
                   <TableCell>{c.courseTitle}</TableCell>
                   <TableCell>{enrolled.length}</TableCell>
                   <TableCell>
@@ -304,7 +317,11 @@ export default function AdminEnrollmentsPage() {
                         </span>
                       ) : (
                         enrolled.map((s) => (
-                          <Badge key={s.studentId} variant="outline" className="gap-1">
+                          <Badge
+                            key={s.studentId}
+                            variant="outline"
+                            className="gap-1 border-blue-300! bg-blue-100! text-blue-700! dark:border-blue-400/40! dark:bg-blue-500/20! dark:text-blue-300!"
+                          >
                             {s.firstName} {s.lastName}
                             <button
                               type="button"
