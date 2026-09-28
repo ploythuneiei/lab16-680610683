@@ -1,6 +1,7 @@
 import { Outlet } from "react-router";
 
 import { AppSidebar } from "@/components/app-sidebar";
+import { AppFooter } from "@/components/app-footer";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -25,7 +26,7 @@ export default function RootLayout() {
         <main className="flex-1 p-4">
           <Outlet />
         </main>
-        <footer className="border-t p-4 text-center text-xs text-muted-foreground"></footer>
+        <AppFooter firstName="ธัลวรัตน์" lastName="ศรีจันทร์ดร" studentId="680610683" />
       </SidebarInset>
     </SidebarProvider>
   );
